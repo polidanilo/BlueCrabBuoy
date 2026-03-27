@@ -7,6 +7,17 @@ only lightweight ecological payloads over LoRa/MQTT.
 
 > Status: architecture complete, implementation in progress
 
+Screenshot 2026-03-27 010018.png
+
+<table width="100%" border="0">
+  <tr>
+    <td width="100%" align="center" valign="top">
+      <img src="assets/Screenshot 2026-03-27 010018.png" width="100%"><br>
+      <em>Operational diagram</em>
+    </td>
+  </tr>
+</table>
+
 ## Why this project
 
 The blue crab is one of the most damaging invasive species in 
