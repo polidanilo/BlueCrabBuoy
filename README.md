@@ -1,51 +1,85 @@
 # Blue Crab Monitoring Buoy
-An edge AI IoT buoy for autonomous, low-power monitoring of *Callinectes sapidus* (blue crab) in lagoonal environments — designed to run computer vision inference locally and transmit only lightweight ecological payloads over LoRa/MQTT.
+An edge AI IoT buoy for autonomous, low-power monitoring of *Callinectes sapidus* (blue crab) in lagoonal environments — designed to transmit lightweight ecological payloads over LoRa/MQTT,
+with a planned computer vision layer for on-device species detection.
 
-> Status: hardware assembly in progress · future AI pipeline planned.
+> Status: hardware design complete · sensor assembly in progress · future AI pipeline planned
 
 <table width="100%" border="0">
   <tr>
     <td width="100%" align="center" valign="top">
       <img src="assets/Screenshot 2026-03-27 010018.png" width="100%"><br>
-      <em>Operational diagram</em>
-      > **Placeholder** — provisional sketch in Italian; some values differ from current spec. To be replaced.
+      <em>Provisional operational diagram: text in Italian, will be replaced with an updated diagram before first field deployment.
+      </em>
     </td>
   </tr>
 </table>
 
 ## Why this project
-The blue crab is one of the most damaging invasive species in the Mediterranean. Current monitoring relies on manual trap inspection campaigns — periodic, labor-intensive, and spatially limited. This buoy is designed as a continuous, autonomous alternative: a fixed-point camera trap that detects crabs, estimates carapace size, and transmits structured ecological data without human presence.
+The blue crab is one of the most ecologically damaging invasive species in the Mediterranean. Current monitoring relies on manual trap inspection campaigns — periodic, labor-intensive, and spatially limited. This buoy is designed as a continuous, autonomous alternative: a fixed-point node that detects environmental triggers, logs structured sensor data, and transmits compact telemetry payloads without human presence.
 
 The system is inspired by published underwater camera trap methodology (L'Hoste et al. 2025, Bilodeau et al. 2021) and population biology data for *C. sapidus* in Italian saltmarshes (Marchessaux et al. 2023).
 
 ## Hardware architecture
+The buoy is built around two microcontrollers with distinct roles, enclosed in a waterproof chassis with passive anti-fouling measures and different planned options for power supply, including solar charging.
+
+### Enclosure and deployment
+| Component | Role |
+|---|---|
+| IP65/IP68 waterproof enclosure | Protects electronics from water ingress |
+| PG7 cable glands | Sealed sensor wire pass-throughs |
+| Acrylic optical window | Camera port, flush-mounted and sealed |
+| Foam collar | Passive buoyancy |
+| Copper tape | Passive anti-biofouling |
+| Anchor line + weight | Fixed-point mooring in shallow water |
+| Bait compartment | Attracts *C. sapidus* into camera FOV |
+| 2× 18650 Li-ion cells | Primary power source |
+| Solar panel | Trickle charge for extended deployment |
+
+### Electronics
 ```
-ESP32 (manager)          STM32H743 (AI coprocessor)
-├── JSN-SR04T sonar      ├── OV2640 camera (acrylic window)
-├── DS18B20 temperature  ├── YOLOv8n INT8 inference
-├── turbidity sensor     └── pixels_to_centimeters estimate
+ESP32 (manager / ULP trigger)        STM32H743 (future coprocessor)
+├── JSN-SR04T sonar                  ├── OV2640 camera module
+├── DS18B20 temperature sensor       └── AI pipeline (planned)
+├── Turbidity sensor
 ├── LoRa / Wi-Fi / MQTT
-└── MicroSD (DTN queue)
+└── MicroSD (DTN offline queue)
 ```
 
-**Energy-triggered pipeline:** the ESP32 ULP coprocessor pings the sonar at 10–150 µA continuously. Only when an object approaches the bait does it wake the STM32 for a ~500ms inference window, then returns to deep sleep. Target autonomy: 6+ months on two 18650 cells.
+**Energy-triggered pipeline:** the ESP32 ULP coprocessor pings the sonar continuously at minimal current draw. Only when an object enters the detection range does it wake the STM32 and the main processing pipeline for a sensor acquisition window, then returns to deep sleep.
+
+## Telemetry and ecological output
+Each trigger event produces a compact payload transmitted over LoRa/MQTT:
+```
+node_id | timestamp | temp_c | turbidity | sonar_cm | flags
+```
+True negatives are logged hourly even when no trigger occurs, enabling detection frequency and activity pattern analysis.
 
 ## AI pipeline (planned)
-The following describes the intended AI architecture for a future phase of the project. Current development focuses on the sensor and telemetry stack.
+> The following describes the intended computer vision layer,
+> to be implemented after the sensor/telemetry stack is validated in the field.
+
 - **Model:** YOLOv8n / YOLO11n fine-tuned on the [Brackish Dataset](https://public.roboflow.com/object-detection/brackish-underwater).
-- **Training:** vanilla PyTorch loop with Focal Loss, underwater data augmentation (CLAHE, gaussian noise, HSV shifts), hard negative mining.
+- **Training:** PyTorch with Focal Loss, underwater augmentation (CLAHE, gaussian noise, HSV shifts), hard negative mining.
 - **Deployment:** PyTorch → ONNX → TFLite INT8 (PTQ) via CMSIS-NN on STM32 Cortex-M7.
 - **Biological validation:** carapace size classification (juvenile < 5 cm / subadult / mature > 11.75 cm) based on Marchessaux et al. 2023 L₅₀ data.
 
-### Ecological output
-Each detection event produces a 23-byte payload:
-```
-node_id | timestamp | lat | lon | num_crabs | size_class | temp_c | turbidity | sonar_cm | flags
-```
+When active, each detection event will extend the payload to include `num_crabs` and `size_class` (juvenile / subadult / mature), turning each detection into a data point on population structure rather than simple presence/absence.
 
-`size_class` encodes juvenile / subadult / mature — turning each detection into a data point on population structure, not just presence/absence.
-
-True negatives are logged hourly even when no crab is detected, enabling detection frequency analysis (L'Hoste et al. 2025 methodology).
+## Current status & roadmap
+| Area | Status |
+|---|---|
+| Hardware architecture & BOM | ✅ Complete |
+| Repository structure & module design | ✅ Complete |
+| Enclosure mechanical design | 🔄 In progress |
+| Component procurement | 🔄 In progress |
+| ESP32 firmware — sonar + ULP trigger | 🔄 In progress |
+| ESP32 firmware — DS18B20 + turbidity | ⏳ Planned |
+| LoRa telemetry pipeline + DTN queue | ⏳ Planned |
+| Field deployment and testing | ⏳ Planned |
+| STM32 integration + camera module | ⏳ Planned |
+| YOLO fine-tuning on Brackish Dataset | ⏳ Planned |
+| TFLite INT8 quantization + CMSIS-NN | ⏳ Planned |
+| Carapace size classification | ⏳ Planned |
 
 ## Repository structure
 ```
@@ -54,7 +88,7 @@ BlueCrabMonitoring/
 ├── data/            # Dataset loaders, augmentation, splits
 ├── core/            # YOLO wrapper, CoordConv, NMS, embeddings
 ├── losses/          # Focal Loss, CIoU/DFL, distillation loss
-├── training/        # Vanilla PyTorch training loop + utilities
+├── training/        # PyTorch training loop + utilities
 ├── evaluation/      # mAP, confusion matrix, bias analysis
 ├── distillation/    # Teacher→student knowledge distillation
 ├── quantization/    # ONNX + TFLite INT8 export pipeline
