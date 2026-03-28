@@ -1,5 +1,5 @@
 # Blue Crab Monitoring Buoy
-An edge AI IoT buoy for autonomous, low-power monitoring of *Callinectes sapidus* (blue crab) in lagoonal environments — designed to transmit lightweight ecological payloads over LoRa/MQTT,
+I'm evolving what started as a personal project on coastal telemetry into something more ambitious: An edge AI IoT buoy for autonomous, low-power monitoring of *Callinectes sapidus* (blue crab) in lagoonal environments — designed to transmit lightweight ecological payloads over LoRa/MQTT,
 with a planned computer vision layer for on-device species detection.
 
 > Status: hardware design complete · sensor assembly in progress · future AI pipeline planned
@@ -14,7 +14,7 @@ with a planned computer vision layer for on-device species detection.
   </tr>
 </table>
 
-## Why this project
+## Overview
 The blue crab is one of the most ecologically damaging invasive species in the Mediterranean. Current monitoring relies on manual trap inspection campaigns — periodic, labor-intensive, and spatially limited. This buoy is designed as a continuous, autonomous alternative: a fixed-point node that detects environmental triggers, logs structured sensor data, and transmits compact telemetry payloads without human presence.
 
 The system is inspired by published underwater camera trap methodology (L'Hoste et al. 2025, Bilodeau et al. 2021) and population biology data for *C. sapidus* in Italian saltmarshes (Marchessaux et al. 2023).
@@ -65,7 +65,7 @@ True negatives are logged hourly even when no trigger occurs, enabling detection
 
 When active, each detection event will extend the payload to include `num_crabs` and `size_class` (juvenile / subadult / mature), turning each detection into a data point on population structure rather than simple presence/absence.
 
-## Current status & roadmap
+## Roadmap
 | Area | Status |
 |---|---|
 | Hardware architecture & BOM | ✅ Complete |
